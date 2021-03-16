@@ -22,23 +22,26 @@ public class Components{
 
         return array;
     }
-    
-    public int fuel(){
+    public int getRandomNumber(int max, int min){
         //random number between min 200 and max 900
-        return (rand.nextInt(900-200) + 200);
+        return (rand.nextInt(max-min) + min);
+    }
+    public int fuel(){
+        return getRandomNumber(900,200);
+//        return (rand.nextInt(900-200) + 200);
     }
 
     public int thrusters(){
-        return (rand.nextInt(12-4) + 4);
+        return getRandomNumber(12,4);
     }
 
     public int instruments(){
-        return (rand.nextInt(18-9) + 9);
+        return getRandomNumber(18,9);
     }
     public int controlSystems(){
-        return (rand.nextInt(6-3) + 3);
+        return getRandomNumber(6,3);
     }
     public int powerPlants(){
-        return (rand.nextInt(9-4) + 4);
+        return getRandomNumber(9,4);
     }
 }
