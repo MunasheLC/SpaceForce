@@ -12,6 +12,7 @@ public class Mission extends Thread{
     int intruments;
     int controlSystem;
     int powerPlant;
+    Double networkSpeed;
     String stage;
     String status;
     String name;
@@ -30,6 +31,7 @@ public class Mission extends Thread{
         this.name= name;
         this.destination = destination;
         this.status= "normal";
+        this.networkSpeed = 0.0;
 
     }
 
@@ -38,7 +40,7 @@ public class Mission extends Thread{
     public boolean checkFailure(int failureRate) {
 
         int random = ThreadLocalRandom.current().nextInt(0, 100);
-        System.out.println("failure calc is: " + random);
+//        System.out.println("failure calc is: " + random);
         return random <= failureRate;
     }
 
@@ -81,11 +83,13 @@ public class Mission extends Thread{
             }
 
             stage = "interplanetary transit stage";
-            System.out.println( name + " to" + destination + " is entering interplanetary transit stage");
+//            System.out.println( name + " to" + destination + " is entering interplanetary transit stage");
+            transmitReport();
             return true;
         }
         else{
-            status = "Mission error";
+            status = "failing";
+            transmitReport();
             return false;
         }
     }
@@ -106,11 +110,15 @@ public class Mission extends Thread{
             }
 
             stage = "exploration stage";
-            System.out.println( name + " to" + destination + " is entering exploration stage");
+//            System.out.println( name + " to" + destination + " is entering exploration stage");
+
+            transmitReport();
+
             return true;
         }
         else {
-            status = "Mission error";
+            status = "failing";
+            transmitReport();
             return false;
 
         }
@@ -137,15 +145,16 @@ public class Mission extends Thread{
             }
 
             stage = "exploration stage";
-            System.out.println( name + " to" + destination + " is now exploring");
+//            System.out.println( name + " to" + destination + " is now exploring");
+            transmitReport();
             return true;
         }
         else{
-            status = "Mission error";
+            status = "failing";
+            transmitReport();
             return false;
         }
     }
-
 
 
 
