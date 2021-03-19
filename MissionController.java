@@ -1,12 +1,12 @@
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.BlockingQueue;
 
 
-public class MissionController {
+public class MissionController { //wants to put asa timer task, to constantly request information.
 
     // Request Report
     public void requestReport(){
@@ -20,9 +20,9 @@ public class MissionController {
 
     // List of the missions
 
-    BlockingQueue netQ = nt.waiting_Queue;
     private List<Mission> listOfMissions = new ArrayList<>();
     private boolean noMoreMissions = false;
+    HashMap<String, HashMap<String,Integer>> map_components = new HashMap<String, HashMap<String,Integer>>();
 
 
 
@@ -38,9 +38,14 @@ public class MissionController {
             double networkSpeed = nt.getSpeed();
 
 //            System.out.println("The destination for " + name + " is " + destination);
+            map_components.put(name, new HashMap<String,Integer>());
+            map_components.get(name).put("Fuel",comps.fuel());
+            map_components.get(name).put("Thrusters",comps.thrusters());
+            map_components.get(name).put("Instruments",comps.instruments());
+            map_components.get(name).put("ControlSystems",comps.controlSystems());
+            map_components.get(name).put("PowerPlants",comps.powerPlants());
 
-            Mission mission = new Mission(name, comps.fuel(), comps.thrusters(), comps.instruments(), comps.controlSystems(), comps.powerPlants(), destination, networkSpeed);
-
+            Mission mission = new Mission(map_components, name, destination, networkSpeed);
 
             System.out.println(mission.missionInitilize());
 
@@ -63,6 +68,11 @@ public class MissionController {
 
             mission.killMission();
         }
+
+    }
+
+    public synchronized void recieveReport(String report){
+
 
     }
 
