@@ -1,5 +1,3 @@
-package com.company;
-
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -21,7 +19,7 @@ public class Mission extends Thread{
 
 
     //Supplies allocated by mission controller based on destination planet
-    public Mission (String name, int fuel, int thrusters, int instruments, int controlSystem, int powerPlant, String destination ) {
+    public Mission (String name, int fuel, int thrusters, int instruments, int controlSystem, int powerPlant, String destination, double networkSpeed ) {
         this.fuel = fuel;
         this.thrusters = thrusters;
         this.intruments = instruments;
@@ -31,7 +29,7 @@ public class Mission extends Thread{
         this.name= name;
         this.destination = destination;
         this.status= "normal";
-        this.networkSpeed = 0.0;
+        this.networkSpeed = networkSpeed;
 
     }
 
@@ -44,6 +42,50 @@ public class Mission extends Thread{
         return random <= failureRate;
     }
 
+    public boolean errorCheck(){
+        boolean failchecker = true; //currently failing
+        Random rand = new Random();
+        int failureProbability = rand.nextInt(9-5) + 5;
+        System.out.println("Checking for Software Update for " + name + " at stage: " + stage);
+        if (failureProbability > 5){
+            System.out.println("Update available for " + name + " at stage: " + stage);
+            Network nt = new Network();
+            System.out.println("Developing Software Update for " + name + " at stage " + stage);
+            int updateDevLength = nt.developSoftwareUpdate();
+            try {
+                Thread.sleep(updateDevLength);
+            }
+            catch (InterruptedException e){
+
+                System.out.println("Update Development has been interrupted");
+
+            }
+
+            System.out.println("Updating..");
+            int update = nt.initializeSoftwareUpdate();
+            try {
+                Thread.sleep(update);
+            }
+            catch (InterruptedException e){
+
+                System.out.println("Update has been interrupted");
+
+            }
+            System.out.println("Update complete for " + name + " at stage " + stage);
+            System.out.println(name +" at "+ stage + " recovered ");
+            System.out.println();
+            failchecker = false; //not failing
+            return failchecker;
+        }
+
+        else{
+            System.out.println("No update for " + name + " at stage: " + stage);
+            System.out.println("Systems failed");
+            return failchecker;
+        }
+    }
+
+
     public String missionInitilize(){
 
         String missionStatus;
@@ -52,16 +94,6 @@ public class Mission extends Thread{
         return missionStatus;
     }
 
-//    public void failureCheck(){
-//
-//        boolean failure = false;
-//
-//
-//        // possibly not necessary because this stuff needs to go in the report anyway. More for us testing really
-//        System.out.println(this.name + "is checking the status of the mission");
-//
-//
-//    }
 
     // Method to calculate distance
     private int calculateDistance() {
@@ -90,7 +122,13 @@ public class Mission extends Thread{
         else{
             status = "failing";
             transmitReport();
+            if (!errorCheck()){
+                status = "recovered";
+                transmitReport();
+                return true;
+            }
             return false;
+
         }
     }
 
@@ -116,12 +154,23 @@ public class Mission extends Thread{
 
             return true;
         }
-        else {
+        else{
             status = "failing";
             transmitReport();
+            if (!errorCheck()){
+                status = "recovered";
+                transmitReport();
+                return true;
+            }
             return false;
 
         }
+//        else {
+//            status = "failing";
+//            transmitReport();
+//            return false;
+//
+//        }
 
 
     }
@@ -152,7 +201,13 @@ public class Mission extends Thread{
         else{
             status = "failing";
             transmitReport();
+            if (!errorCheck()){
+                status = "recovered";
+                transmitReport();
+                return true;
+            }
             return false;
+
         }
     }
 
@@ -192,10 +247,10 @@ public class Mission extends Thread{
         //System.out.println("Test Run");
         while (missionInProgress) {
 
-          if (!boostStage() || !interplanetaryTransitStage() || !explorationStage()){
+            if (!boostStage() || !interplanetaryTransitStage() || !explorationStage()){
 
-              killMission();
-          }
+                killMission();
+            }
 
         }
 
