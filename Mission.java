@@ -1,4 +1,4 @@
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class Mission extends Thread{
@@ -6,10 +6,8 @@ public class Mission extends Thread{
     private volatile boolean missionInProgress = true;
 
     int fuel;
-    int thrusters;
-    int intruments;
-    int controlSystem;
-    int powerPlant;
+    int dividedFuel;
+    HashMap<String, HashMap<String,Integer>> components;
     Double networkSpeed;
     String stage;
     String status;
@@ -17,14 +15,9 @@ public class Mission extends Thread{
     String destination;
 
 
-
     //Supplies allocated by mission controller based on destination planet
-    public Mission (String name, int fuel, int thrusters, int instruments, int controlSystem, int powerPlant, String destination, double networkSpeed ) {
-        this.fuel = fuel;
-        this.thrusters = thrusters;
-        this.intruments = instruments;
-        this.controlSystem = controlSystem;
-        this.powerPlant = powerPlant;
+    public Mission ( HashMap components, String name, String destination, double networkSpeed ) {
+        this.components = components;
         this.stage = "boost";
         this.name= name;
         this.destination = destination;
@@ -42,37 +35,31 @@ public class Mission extends Thread{
         return random <= failureRate;
     }
 
-    public boolean errorCheck(){
+    public synchronized boolean errorCheck(){
         boolean failchecker = true; //currently failing
         Random rand = new Random();
-        int failureProbability = rand.nextInt(9-5) + 5;
-        System.out.println("Checking for Software Update for " + name + " at stage: " + stage);
-        if (failureProbability > 5){
-            System.out.println("Update available for " + name + " at stage: " + stage);
+        int failureProbability = rand.nextInt(6-5) + 5;
+        System.out.println("======== " + "Failure report for " + name + " at stage: " + stage +" ========");
+        System.out.println("Checking for Software Update..");
+        if (failureProbability == 5){
+            System.out.println("Update available");
+
             Network nt = new Network();
-            System.out.println("Developing Software Update for " + name + " at stage " + stage);
-            int updateDevLength = nt.developSoftwareUpdate();
-            try {
-                Thread.sleep(updateDevLength);
-            }
-            catch (InterruptedException e){
+            nt.getQueue(name, networkSpeed);
+            transmitReport();
+//            nt.componentsQueue(name,hash);
+//            System.out.println("fast net" + nt.fastNetwork);
 
-                System.out.println("Update Development has been interrupted");
+            System.out.println("Developing Software Update..");
+            nt.developSoftwareUpdate(name);
 
-            }
+            System.out.println("Update received");
+            System.out.println("Starting Update..");
+            nt.initializeSoftwareUpdate(name);
 
-            System.out.println("Updating..");
-            int update = nt.initializeSoftwareUpdate();
-            try {
-                Thread.sleep(update);
-            }
-            catch (InterruptedException e){
-
-                System.out.println("Update has been interrupted");
-
-            }
-            System.out.println("Update complete for " + name + " at stage " + stage);
-            System.out.println(name +" at "+ stage + " recovered ");
+            System.out.println("Update complete.");
+            System.out.println(name +" has recovered ");
+            System.out.println("=============================================================");
             System.out.println();
             failchecker = false; //not failing
             return failchecker;
@@ -81,6 +68,7 @@ public class Mission extends Thread{
         else{
             System.out.println("No update for " + name + " at stage: " + stage);
             System.out.println("Systems failed");
+            System.out.println("=============================================================");
             return failchecker;
         }
     }
@@ -102,11 +90,11 @@ public class Mission extends Thread{
 
     // Boost is instant, run first
     private Boolean boostStage(){
-
+        System.out.println("component list " + components);
         if (!checkFailure(10)){
             try {
-
-                Thread.sleep(100);
+                transmitReport();
+                Thread.sleep(500);
 
             } catch (InterruptedException e){
 
@@ -115,7 +103,15 @@ public class Mission extends Thread{
             }
 
             stage = "interplanetary transit stage";
-//            System.out.println( name + " to" + destination + " is entering interplanetary transit stage");
+
+            int fuel = components.get(name).get("Fuel");
+            int m = (fuel/3);
+            dividedFuel = m;
+
+            Components system_components = new Components();
+            int newFuel = system_components.getFuel(fuel, dividedFuel);
+            components.get(name).replace("Fuel", newFuel);
+            System.out.println("component list new " + components);
             transmitReport();
             return true;
         }
@@ -139,6 +135,8 @@ public class Mission extends Thread{
             try {
 
                 int distance = calculateDistance();
+
+                transmitReport();
                 Thread.sleep(distance);
 
             } catch (InterruptedException e){
@@ -150,8 +148,12 @@ public class Mission extends Thread{
             stage = "exploration stage";
 //            System.out.println( name + " to" + destination + " is entering exploration stage");
 
+            Components system_components = new Components();
+            int fuel = components.get(name).get("Fuel");
+            int newFuel = system_components.getFuel(fuel, dividedFuel);
+            components.get(name).replace("Fuel", newFuel);
+            System.out.println("component list new " + components);
             transmitReport();
-
             return true;
         }
         else{
@@ -165,16 +167,7 @@ public class Mission extends Thread{
             return false;
 
         }
-//        else {
-//            status = "failing";
-//            transmitReport();
-//            return false;
-//
-//        }
-
-
     }
-
 
     // Variable time to complete based on planet size
     private Boolean explorationStage(){
@@ -184,7 +177,7 @@ public class Mission extends Thread{
 
 
             try {
-
+                transmitReport();
                 Thread.sleep(timeToExplore);
 
             } catch (InterruptedException e){
@@ -195,8 +188,14 @@ public class Mission extends Thread{
 
             stage = "exploration stage";
 //            System.out.println( name + " to" + destination + " is now exploring");
+
+            Components system_components = new Components();
+            int fuel = components.get(name).get("Fuel");
+            int newFuel = system_components.getFuel(fuel, dividedFuel);
+            components.get(name).replace("Fuel", newFuel);
+            System.out.println("component list new " + components);
             transmitReport();
-            return true;
+            return false;
         }
         else{
             status = "failing";
@@ -215,7 +214,6 @@ public class Mission extends Thread{
 
     // Transmit status of the mission to mission control, sleep until reply from control
     public void transmitReport(){
-
         String report = String.format(
                 "Mission: %s\n" + "Destination: %s\n" + "Stage: %s\n" + "Status: %s\n ",
                 name,
