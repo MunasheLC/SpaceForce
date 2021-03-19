@@ -1,10 +1,3 @@
-package com.company;
-
-
-// Essentially a thread pool of the missions
-
-
-import org.w3c.dom.ls.LSOutput;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,9 +26,6 @@ public class MissionController {
 
 
 
-
-
-
     public MissionController(int numberOfMissions) {
 
         // For the number of missions to be monitored, create a mission
@@ -45,12 +35,12 @@ public class MissionController {
             Components comps = new Components(); // Generate mission components
 
             String destination = comps.destination()[0]; //choose a destination?
+            double networkSpeed = nt.getSpeed();
 
 //            System.out.println("The destination for " + name + " is " + destination);
 
-            Mission mission = new Mission(name, comps.fuel(), comps.thrusters(), comps.instruments(), comps.controlSystems(), comps.powerPlants(), destination);
+            Mission mission = new Mission(name, comps.fuel(), comps.thrusters(), comps.instruments(), comps.controlSystems(), comps.powerPlants(), destination, networkSpeed);
 
-            mission.networkSpeed = nt.getSpeed();
 
             System.out.println(mission.missionInitilize());
 
