@@ -1,5 +1,3 @@
-package com.company;
-
 import javax.naming.ldap.Control;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -54,14 +52,14 @@ public class Mission extends Thread{
     public void getStartTime(){
 
         this.startTime = Calendar.getInstance().getTime().toString();
-//        System.out.println("Start ime is: " + startTime);
+//        controller.mainWriter("Start ime is: " + startTime);
 
     }
 
     public String geTime(){
         String time = Calendar.getInstance().getTime().toString();
         return time;
-//        System.out.println("Start ime is: " + startTime);
+//        controller.mainWriter("Start ime is: " + startTime);
 
     }
 
@@ -79,7 +77,7 @@ public class Mission extends Thread{
     public boolean checkFailure(int failureRate) {
 
         int random = ThreadLocalRandom.current().nextInt(0, 100);
-//        System.out.println("failure calc is: " + random);
+//        controller.mainWriter("failure calc is: " + random);
         return random <= failureRate;
     }
 
@@ -89,25 +87,28 @@ public class Mission extends Thread{
         Random rand = new Random();
 
 //
-            // 25% of failiures are recoverable
-            if (checkFailure(25)) {
-                //Send message for SoftwareUpdate
-                net.AddReportToControllerQ(name, networkSpeed, "SOFTWAREUPDATE", 5, controller);
-                if (net.avalbility){
-                    int US = net.updateSize;
-                    initializeSoftwareUpdate(US);
-                    failchecker = false;
-                    return failchecker;
-                }
-            }
-
-            //mission abort
-            else {
-                net.AddReportToControllerQ(name, networkSpeed, "TERMINATE", 5, controller);
+        // 25% of failiures are recoverable
+        if (checkFailure(25)) {
+            //Send message for SoftwareUpdate
+            String time = geTime();
+            System.out.println(time);
+            net.AddReportToControllerQ(name, networkSpeed, "SOFTWAREUPDATE", 5, controller, time);
+            if (net.avalbility){
+                int US = net.updateSize;
+                initializeSoftwareUpdate(US);
+                failchecker = false;
                 return failchecker;
             }
-            return true;
         }
+
+        //mission abort
+        else {
+            String time = geTime();
+            net.AddReportToControllerQ(name, networkSpeed, "TERMINATE", 5, controller, time);
+            return failchecker;
+        }
+        return true;
+    }
 
 
     HashMap<Object,Integer> divs = new HashMap<Object,Integer>();
@@ -135,7 +136,7 @@ public class Mission extends Thread{
         }
         catch (InterruptedException e){
 
-            System.out.println("Update Development has been interrupted");
+            controller.mainWriter("Update Development has been interrupted");
 
         }
     }
@@ -143,17 +144,20 @@ public class Mission extends Thread{
         Network net = new Network();
         if (networkSpeed == 2.0) {
             sleep(updateSize, 200);
-            net.AddReportToControllerQ(name, networkSpeed, "UPDATESUCCESS", 5, controller);
+            String time = geTime();
+            net.AddReportToControllerQ(name, networkSpeed, "UPDATESUCCESS", 5, controller, time);
         }
 
         if(networkSpeed == 0.2) {
             sleep(updateSize, 400);
-            net.AddReportToControllerQ(name, networkSpeed, "UPDATESUCCESS", 5, controller);
+            String time = geTime();
+            net.AddReportToControllerQ(name, networkSpeed, "UPDATESUCCESS", 5, controller,time);
         }
 
         if (networkSpeed == 0.02) {
             sleep(updateSize, 600);
-            net.AddReportToControllerQ(name, networkSpeed, "UPDATESUCCESS", 5, controller);
+            String time = geTime();
+            net.AddReportToControllerQ(name, networkSpeed, "UPDATESUCCESS", 5, controller, time);
         }
     }
 
@@ -166,7 +170,7 @@ public class Mission extends Thread{
 
                 int initial = divs.get(key2);
                 String message = (key2 + " is @ " + innerMap.get(key2) + "/" + initial);
-                net.AddComponentReportToControllerQ(name, networkSpeed, key2, message, controller);
+                net.AddComponentReportToControllerQ(name, networkSpeed, key2, message, controller, geTime());
             }
         }
     }
@@ -184,11 +188,9 @@ public class Mission extends Thread{
 
     // Boost is instant, run first
     private Boolean boostStage(){
-        System.out.println("Components before use: " + components);
-        String s = "Components before use: " + components;
-        controller.mainWriter(s);
+        controller.mainWriter("Components before use: " + components);
 
-        System.out.println("");
+        controller.mainWriter("");
         if (!checkFailure(10)){
             try {
                 transmitReport();
@@ -196,7 +198,7 @@ public class Mission extends Thread{
 
             } catch (InterruptedException e){
 
-                System.out.println( name + " to" + destination + " has been interrupted");
+                controller.mainWriter( name + " to" + destination + " has been interrupted");
 
             }
 
@@ -230,21 +232,19 @@ public class Mission extends Thread{
             try {
 
                 int distance = calculateDistance();
-                System.out.println("");
+                controller.mainWriter("");
                 transmitReport();
                 Thread.sleep(distance);
 
             } catch (InterruptedException e){
 
-                System.out.println( name + " to" + destination + " has been interrupted");
+                controller.mainWriter( name + " to" + destination + " has been interrupted");
 
             }
 
             stage = "exploration stage";
-//            System.out.println( name + " to" + destination + " is entering exploration stage");
 
             decrement();
-//            transmitReport();
             componentReport();
             return true;
         }
@@ -269,26 +269,26 @@ public class Mission extends Thread{
 
 
             try {
-                System.out.println("");
+                controller.mainWriter("");
                 transmitReport();
                 Thread.sleep(timeToExplore);
                 Random rand = new Random();
                 int findProbability = rand.nextInt(6-5) + 5;
                 if (findProbability == 5) {
                     Exploration ex = new Exploration();
-                    ex.getFinding(name);
+                    ex.getFinding(name, controller);
                 }
                 Thread.sleep(timeToExplore);
 
             } catch (InterruptedException e){
 
-                System.out.println( name + " to" + destination + " has been interrupted");
+                controller.mainWriter( name + " to" + destination + " has been interrupted");
 
             }
 
             stage = "exploration stage";
             status = "complete";
-//            System.out.println( name + " to" + destination + " is now exploring");
+//            controller.mainWriter( name + " to" + destination + " is now exploring");
 
             decrement();
             componentReport();
@@ -320,7 +320,7 @@ public class Mission extends Thread{
                 status);
 
 
-        System.out.println(report);
+        controller.mainWriter(report);
 
     }
 
@@ -332,12 +332,12 @@ public class Mission extends Thread{
         if (status.equals("failing")){
 
             status = "failed";
-            System.out.println(name + " has FAILED! \n" +
+            controller.mainWriter(name + " has FAILED! \n" +
                     "End Time: " + endTime);
 
         }
         else{
-            System.out.println(name + " was Successful!\n" +
+            controller.mainWriter(name + " was Successful!\n" +
                     "End Time: " + endTime);
         }
 
@@ -388,7 +388,7 @@ public class Mission extends Thread{
     public void run() {
 
 
-        //System.out.println("Test Run");
+        //controller.mainWriter("Test Run");
         while (missionInProgress) {
 
             if (!boostStage() || !interplanetaryTransitStage() || !explorationStage()){
