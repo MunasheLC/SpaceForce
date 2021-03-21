@@ -1,22 +1,3 @@
-// import java.util.concurrent.BlockingQueue;
-// import java.util.Random;
-// import java.util.*;
-
-// public class Network implements Runnable {
-//     private BlockingQueue<Integer> numbersQueue;
-
-//     public void getSpeed(){
-//         //pick a bandwidth at random
-//         List<Double> bandwidth= Arrays.asList(0.02, 0.2, 2.0);
-//         Random rand = new Random();
-//         double randomElement = bandwidth.get(rand.nextInt(bandwidth.size()));
-//         System.out.println("Bandwidth: " + randomElement);
-//     }
-
-//     public void run() {
-//       getSpeed();
-//     }
-// }
 import java.util.concurrent.BlockingQueue;
 import java.util.Random;
 import java.util.concurrent.*;
@@ -24,11 +5,18 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.*;
 
-public class Network implements Runnable {
+public class Network{
 
     BlockingQueue<String> FAST = new LinkedBlockingDeque<>();
     BlockingQueue<String> MEDIUM = new LinkedBlockingDeque<>();
     BlockingQueue<String> SLOW = new LinkedBlockingDeque<>();
+
+    boolean sendToController = false;
+    boolean sendToMission = false;
+
+    BlockingQueue<String> reports = new LinkedBlockingDeque<>();
+
+
 
     private Lock lock = new ReentrantLock();
     List<Double> bandwidth= Arrays.asList(0.02, 0.2, 2.0);
@@ -112,21 +100,39 @@ public class Network implements Runnable {
             sleep(updateLength, 60000);
         }
     }
-    public BlockingQueue<String> fastNetwork = new LinkedBlockingDeque<>();
 
-    public void componentsQueue(String name,HashMap<String,List> hash) {
+//    public void componentsQueue(String name,HashMap<String,List> hash) {
+//
+//        List components = hash.get(name);
+//
+//        for (int i = 0; i < components.size(); i++) {
+//            double speed = 2.0;
+//
+//            if (speed == 2.0){
+//                System.out.println(components.get(i));
+//            }
+//        }
+//    }
+    public void AddComponentReportToControllerQ(String name, double networkSpeed , Object component, String message, int messageSize){
+        System.out.println(name + " Component: " + component + " makes request to network: " + networkSpeed + " at time: " + " for message: " + message);
+//        reports.add(message); // add report to queue
+//        SendReportToController();
 
-        List components = hash.get(name);
-
-        for (int i = 0; i < components.size(); i++) {
-            double speed = 2.0;
-
-            if (speed == 2.0){
-                System.out.println(components.get(i));
-            }
-        }
+    }
+    public void AddReportToControllerQ(String name, double networkSpeed , String messageType, int messageSize){
+        Report re = new Report();
+        String message = re.Report(messageType, messageSize);
+        System.out.println(name + " makes request to network: " + networkSpeed + " at time: " + " for message: " + message);
+        reports.add(message); // add report to queue.
+        SendReportToController();
     }
 
-        public void run(){
+    public void SendReportToController(){
+        String message = reports.poll(); //.poll gets the first report from the queue and removes it.
+        MissionController mc = new MissionController(0);
+        mc.recieveReport(message); //send report to mission controller
     }
-}
+
+
+
+    }
