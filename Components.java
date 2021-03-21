@@ -44,9 +44,10 @@ public class Components{
     public int powerPlants(){
         return getRandomNumber(9,4);
     }
-    public int getFuel(int fuel, int dividedFuel){
-        int decrementedfuel = fuel - dividedFuel;
-        System.out.println(fuel + " " + dividedFuel + " " + decrementedfuel);
-        return decrementedfuel;
+
+    public int decrementComponent(int component, int divideNum){
+        int decremented = component - divideNum;
+        return decremented;
     }
+
 }
