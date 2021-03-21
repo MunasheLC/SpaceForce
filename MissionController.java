@@ -7,14 +7,10 @@ import java.util.concurrent.BlockingQueue;
 
 
 public class MissionController { //wants to put asa timer task, to constantly request information.
-
-    // Request Report
-    public void requestReport(){
-
-
-
-    }
-
+String SOFTWAREUPDATE = "need Software Update";
+String UPDATESUCCESS = "Software Update Success";
+String TERMINATE = "Terminate mission";
+String FAIL = "Failure";
 
     Network nt = new Network();
 
@@ -71,11 +67,14 @@ public class MissionController { //wants to put asa timer task, to constantly re
 
     }
 
-    public synchronized void recieveReport(String report){
+    public synchronized void recieveReport(String message){
+        if (message == SOFTWAREUPDATE) {
+            System.out.println("developing Software Update..");
+//            SendSoftwareUpdate();
+        }
 
 
     }
-
 
 
     // Could make changes here if all the threads aren't using the network then nothing is happening
