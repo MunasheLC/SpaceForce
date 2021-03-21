@@ -1,10 +1,12 @@
+package com.company;
+
 import javax.naming.ldap.Control;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class Mission extends Thread{
 
-    private volatile boolean missionInProgress = true;
+    public volatile boolean missionInProgress = true;
 
     int fuel;
     int dividedFuel;
@@ -26,10 +28,13 @@ public class Mission extends Thread{
     String name;
     String destination;
     MissionController controller;
+    String startTime;
+    String endTime;
+    Report report;
 
 
     //Supplies allocated by mission controller based on destination planet
-    public Mission ( HashMap components, String name, String destination, double networkSpeed, MissionController controller ) {
+    public Mission ( HashMap components, String name, String destination, double networkSpeed, MissionController controller) {
         this.components = components;
         this.stage = "boost";
         this.name= name;
@@ -37,11 +42,29 @@ public class Mission extends Thread{
         this.status= "normal";
         this.networkSpeed = networkSpeed;
         this.controller = controller;
+        this.startTime = "";
+        this.endTime = "";
+
 
 
 
 
     }
+
+    public void getStartTime(){
+
+        this.startTime = Calendar.getInstance().getTime().toString();
+//        System.out.println("Start ime is: " + startTime);
+
+    }
+
+    public String geTime(){
+        String time = Calendar.getInstance().getTime().toString();
+        return time;
+//        System.out.println("Start ime is: " + startTime);
+
+    }
+
 
     public void initialComponents(){
         initialfuel = components.get(name).get("Fuel");
@@ -60,23 +83,21 @@ public class Mission extends Thread{
         return random <= failureRate;
     }
 
-    public synchronized boolean errorCheck() {
+    public boolean errorCheck() {
         boolean failchecker = true; //currently failing
         Network net = new Network();
         Random rand = new Random();
-        int failureProbability = 5;
-//                rand.nextInt(6-5) + 5;
-        if (failureProbability == 5) {
-            int resolvable = 5;
-//            rand.nextInt(6-5) + 5;
-            if (resolvable == 5) {
+
+//
+            // 25% of failiures are recoverable
+            if (checkFailure(25)) {
                 //Send message for SoftwareUpdate
                 net.AddReportToControllerQ(name, networkSpeed, "SOFTWAREUPDATE", 5, controller);
                 if (net.avalbility){
                     int US = net.updateSize;
                     initializeSoftwareUpdate(US);
                     failchecker = false;
-                   return failchecker;
+                    return failchecker;
                 }
             }
 
@@ -87,8 +108,8 @@ public class Mission extends Thread{
             }
             return true;
         }
-        return failchecker;
-    }
+
+
     HashMap<Object,Integer> divs = new HashMap<Object,Integer>();
 
     public void addKeyToMap(Object key2) {
@@ -139,16 +160,16 @@ public class Mission extends Thread{
     public void componentReport(){
         for (String Key1 : components.keySet()){
             HashMap innerMap = components.get(Key1);
-                for (Object key2 : innerMap.keySet()) {
-                    Network net = new Network();
-                    addKeyToMap(key2);
+            for (Object key2 : innerMap.keySet()) {
+                Network net = new Network();
+                addKeyToMap(key2);
 
-                    int initial = divs.get(key2);
-                    String message = (key2 + " is @ " + innerMap.get(key2) + "/" + initial);
-                    net.AddComponentReportToControllerQ(name, networkSpeed, key2, message, controller);
-                    }
-                }
+                int initial = divs.get(key2);
+                String message = (key2 + " is @ " + innerMap.get(key2) + "/" + initial);
+                net.AddComponentReportToControllerQ(name, networkSpeed, key2, message, controller);
+            }
         }
+    }
 
 
     public String missionInitilize(){
@@ -164,6 +185,9 @@ public class Mission extends Thread{
     // Boost is instant, run first
     private Boolean boostStage(){
         System.out.println("Components before use: " + components);
+        String s = "Components before use: " + components;
+        controller.mainWriter(s);
+
         System.out.println("");
         if (!checkFailure(10)){
             try {
@@ -263,6 +287,7 @@ public class Mission extends Thread{
             }
 
             stage = "exploration stage";
+            status = "complete";
 //            System.out.println( name + " to" + destination + " is now exploring");
 
             decrement();
@@ -300,8 +325,21 @@ public class Mission extends Thread{
     }
 
     public void killMission(){
+        endTime = geTime();
 
-        System.out.println( name + " END ");
+
+
+        if (status.equals("failing")){
+
+            status = "failed";
+            System.out.println(name + " has FAILED! \n" +
+                    "End Time: " + endTime);
+
+        }
+        else{
+            System.out.println(name + " was Successful!\n" +
+                    "End Time: " + endTime);
+        }
 
         missionInProgress = false;
 
