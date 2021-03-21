@@ -12,6 +12,13 @@ public class Mission extends Thread{
     int dividedpowerplants;
     int dividedCS;
     int dividedInstruments;
+
+    int initialfuel;
+    int initialthrusters;
+    int initialpowerplants;
+    int initialCS;
+    int initialInstruments;
+
     HashMap<String, HashMap<String,Integer>> components;
     Double networkSpeed;
     String stage;
@@ -29,6 +36,17 @@ public class Mission extends Thread{
         this.status= "normal";
         this.networkSpeed = networkSpeed;
 
+
+
+
+    }
+
+    public void initialComponents(){
+        initialfuel = components.get(name).get("Fuel");
+        initialpowerplants = components.get(name).get("PowerPlants");
+        initialInstruments = components.get(name).get("Instruments");
+        initialthrusters = components.get(name).get("Thrusters");
+        initialCS = components.get(name).get("ControlSystems");
     }
 
 
@@ -42,16 +60,62 @@ public class Mission extends Thread{
 
     public synchronized boolean errorCheck(){
         boolean failchecker = true; //currently failing
+        Network net = new Network();
         Random rand = new Random();
         int failureProbability = rand.nextInt(6-5) + 5;
+        if (failureProbability == 5){
+            int resolvable = rand.nextInt(6-5) + 5;
+            if (resolvable == 5){
+                //Send message for SoftwareUpdate
+                net.AddReportToControllerQ(name, networkSpeed, "SOFTWAREUPDATE", 5);
+            }
+            //mission abort
+            else {
+                net.AddReportToControllerQ(name, networkSpeed, "TERMINATE", 5);
+            }
+        }
         return true;
     }
+    HashMap<Object,Integer> divs = new HashMap<Object,Integer>();
+
+    public void addKeyToMap(Object key2) {
+        if (key2.equals("PowerPlants")) {
+            divs.put(key2, initialpowerplants);
+        }
+        if (key2.equals("Instruments")) {
+            divs.put(key2, initialInstruments);
+        }
+        if (key2.equals("Fuel")) {
+            divs.put(key2, initialfuel);
+        }
+        if (key2.equals("Thrusters")) {
+            divs.put(key2, initialthrusters);
+        }
+        if (key2.equals("ControlSystems")) {
+            divs.put(key2, initialCS);
+        }
+    }
+
+    public void componentReport(){
+        for (String Key1 : components.keySet()){
+            HashMap innerMap = components.get(Key1);
+                for (Object key2 : innerMap.keySet()) {
+                    Network net = new Network();
+                    addKeyToMap(key2);
+
+                    int initial = divs.get(key2);
+                    String message = (key2 + " is @ " + innerMap.get(key2) + "/" + initial);
+                    net.AddComponentReportToControllerQ(name, networkSpeed, key2, message, 5);
+                    }
+                }
+        }
 
 
     public String missionInitilize(){
 
         String missionStatus;
         missionStatus = "The destination for " + name + " is " + destination;
+        initialComponents();
 
         return missionStatus;
     }
@@ -60,6 +124,7 @@ public class Mission extends Thread{
     // Boost is instant, run first
     private Boolean boostStage(){
         System.out.println("Components before use: " + components);
+        System.out.println("");
         if (!checkFailure(10)){
             try {
                 transmitReport();
@@ -77,7 +142,7 @@ public class Mission extends Thread{
 
             decrement();
 
-            System.out.println("Components used: " + components);
+            componentReport();
 //            transmitReport();
             return true;
         }
@@ -101,7 +166,7 @@ public class Mission extends Thread{
             try {
 
                 int distance = calculateDistance();
-
+                System.out.println("");
                 transmitReport();
                 Thread.sleep(distance);
 
@@ -115,8 +180,8 @@ public class Mission extends Thread{
 //            System.out.println( name + " to" + destination + " is entering exploration stage");
 
             decrement();
-            System.out.println("Components used: " + components);
 //            transmitReport();
+            componentReport();
             return true;
         }
         else{
@@ -140,6 +205,7 @@ public class Mission extends Thread{
 
 
             try {
+                System.out.println("");
                 transmitReport();
                 Thread.sleep(timeToExplore);
                 Random rand = new Random();
@@ -160,7 +226,7 @@ public class Mission extends Thread{
 //            System.out.println( name + " to" + destination + " is now exploring");
 
             decrement();
-            System.out.println("Components used: " + components);
+            componentReport();
 //            transmitReport();
             return false;
         }
