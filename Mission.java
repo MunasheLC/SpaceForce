@@ -1,3 +1,4 @@
+import javax.naming.ldap.Control;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -7,6 +8,10 @@ public class Mission extends Thread{
 
     int fuel;
     int dividedFuel;
+    int dividedthrusters;
+    int dividedpowerplants;
+    int dividedCS;
+    int dividedInstruments;
     HashMap<String, HashMap<String,Integer>> components;
     Double networkSpeed;
     String stage;
@@ -39,38 +44,7 @@ public class Mission extends Thread{
         boolean failchecker = true; //currently failing
         Random rand = new Random();
         int failureProbability = rand.nextInt(6-5) + 5;
-        System.out.println("======== " + "Failure report for " + name + " at stage: " + stage +" ========");
-        System.out.println("Checking for Software Update..");
-        if (failureProbability == 5){
-            System.out.println("Update available");
-
-            Network nt = new Network();
-            nt.getQueue(name, networkSpeed);
-            transmitReport();
-//            nt.componentsQueue(name,hash);
-//            System.out.println("fast net" + nt.fastNetwork);
-
-            System.out.println("Developing Software Update..");
-            nt.developSoftwareUpdate(name);
-
-            System.out.println("Update received");
-            System.out.println("Starting Update..");
-            nt.initializeSoftwareUpdate(name);
-
-            System.out.println("Update complete.");
-            System.out.println(name +" has recovered ");
-            System.out.println("=============================================================");
-            System.out.println();
-            failchecker = false; //not failing
-            return failchecker;
-        }
-
-        else{
-            System.out.println("No update for " + name + " at stage: " + stage);
-            System.out.println("Systems failed");
-            System.out.println("=============================================================");
-            return failchecker;
-        }
+        return true;
     }
 
 
@@ -83,14 +57,9 @@ public class Mission extends Thread{
     }
 
 
-    // Method to calculate distance
-    private int calculateDistance() {
-        return fuel * 10;
-    }
-
     // Boost is instant, run first
     private Boolean boostStage(){
-        System.out.println("component list " + components);
+        System.out.println("Components before use: " + components);
         if (!checkFailure(10)){
             try {
                 transmitReport();
@@ -104,15 +73,12 @@ public class Mission extends Thread{
 
             stage = "interplanetary transit stage";
 
-            int fuel = components.get(name).get("Fuel");
-            int m = (fuel/3);
-            dividedFuel = m;
+            divideComponent();
 
-            Components system_components = new Components();
-            int newFuel = system_components.getFuel(fuel, dividedFuel);
-            components.get(name).replace("Fuel", newFuel);
-            System.out.println("component list new " + components);
-            transmitReport();
+            decrement();
+
+            System.out.println("Components used: " + components);
+//            transmitReport();
             return true;
         }
         else{
@@ -148,12 +114,9 @@ public class Mission extends Thread{
             stage = "exploration stage";
 //            System.out.println( name + " to" + destination + " is entering exploration stage");
 
-            Components system_components = new Components();
-            int fuel = components.get(name).get("Fuel");
-            int newFuel = system_components.getFuel(fuel, dividedFuel);
-            components.get(name).replace("Fuel", newFuel);
-            System.out.println("component list new " + components);
-            transmitReport();
+            decrement();
+            System.out.println("Components used: " + components);
+//            transmitReport();
             return true;
         }
         else{
@@ -179,6 +142,13 @@ public class Mission extends Thread{
             try {
                 transmitReport();
                 Thread.sleep(timeToExplore);
+                Random rand = new Random();
+                int findProbability = rand.nextInt(6-5) + 5;
+                if (findProbability == 5) {
+                    Exploration ex = new Exploration();
+                    ex.getFinding(name);
+                }
+                Thread.sleep(timeToExplore);
 
             } catch (InterruptedException e){
 
@@ -189,12 +159,9 @@ public class Mission extends Thread{
             stage = "exploration stage";
 //            System.out.println( name + " to" + destination + " is now exploring");
 
-            Components system_components = new Components();
-            int fuel = components.get(name).get("Fuel");
-            int newFuel = system_components.getFuel(fuel, dividedFuel);
-            components.get(name).replace("Fuel", newFuel);
-            System.out.println("component list new " + components);
-            transmitReport();
+            decrement();
+            System.out.println("Components used: " + components);
+//            transmitReport();
             return false;
         }
         else{
@@ -215,7 +182,7 @@ public class Mission extends Thread{
     // Transmit status of the mission to mission control, sleep until reply from control
     public void transmitReport(){
         String report = String.format(
-                "Mission: %s\n" + "Destination: %s\n" + "Stage: %s\n" + "Status: %s\n ",
+                "%s: " + "Destination: %s, " + "Stage: %s, " + "Status: %s ",
                 name,
                 destination,
                 stage,
@@ -232,6 +199,41 @@ public class Mission extends Thread{
 
         missionInProgress = false;
 
+    }
+
+    public int divideCalc(String comp){
+        int component = components.get(name).get(comp);
+        int tmp = (component/3);
+        return tmp;
+
+    }
+    public void divideComponent() {
+        dividedFuel = divideCalc("Fuel");
+        dividedthrusters = divideCalc("Thrusters");
+        dividedCS = divideCalc("ControlSystems");
+        dividedInstruments = divideCalc("Instruments");
+        dividedpowerplants = divideCalc("PowerPlants");
+    }
+
+
+    public void decrementComponent(String comp, int dividedcomp){
+        int component = components.get(name).get(comp);
+        Components system_components = new Components();
+        int decrementedComponent = system_components.decrementComponent(component, dividedcomp);
+        components.get(name).replace(comp, decrementedComponent);
+    }
+    public void decrement() {
+        decrementComponent("Fuel", dividedFuel);
+        decrementComponent("Thrusters", dividedthrusters);
+        decrementComponent("ControlSystems", dividedCS);
+        decrementComponent("Instruments", dividedInstruments);
+        decrementComponent("PowerPlants", dividedpowerplants);
+    }
+
+
+    // Method to calculate distance
+    private int calculateDistance() {
+        return fuel * 10;
     }
 
 
