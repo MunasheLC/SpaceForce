@@ -1,6 +1,3 @@
-package com.company;
-
-
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.util.*;
@@ -35,7 +32,7 @@ public class MissionController extends  Thread { //wants to put asa timer task, 
             String destination = comps.destination()[0]; //choose a destination?
             double networkSpeed = nt.getSpeed();
 
-//            System.out.println("The destination for " + name + " is " + destination);
+//            controller.mainWriter("The destination for " + name + " is " + destination);
             map_components.put(name, new HashMap<String, Integer>());
             map_components.get(name).put("Fuel", comps.fuel());
             map_components.get(name).put("Thrusters", comps.thrusters());
@@ -45,7 +42,7 @@ public class MissionController extends  Thread { //wants to put asa timer task, 
 
             Mission mission = new Mission(map_components, name, destination, networkSpeed, this);
 
-            System.out.println(mission.missionInitilize());
+            mainWriter(mission.missionInitilize());
 
 
             listOfMissions.add(mission);
@@ -74,18 +71,25 @@ public class MissionController extends  Thread { //wants to put asa timer task, 
 
     }
 
-    public synchronized void sendSoftwareUpdate(Network nt, int updateSize, double networkSpeed, String missionName) {
+    public synchronized void sendSoftwareUpdate(Network nt, int updateSize, double networkSpeed, String missionName, String time) {
         nt.SoftwareUpdateAvailable(updateSize);
         String message = ("Software update Available for " + missionName);
-        nt.SendReportToMission("Mission Controller ", networkSpeed, message);
+        nt.SendReportToMission("Mission Controller ", networkSpeed, message, time);
+
+    }
+    public String geTime(){
+        String time = Calendar.getInstance().getTime().toString();
+        return time;
+//        controller.mainWriter("Start ime is: " + startTime);
 
     }
 
     public synchronized void recieveReport(String missionName, String message, Network nt, double networkSpeed) {
         if (message == SOFTWAREUPDATE) {
-            System.out.println("Developing Software Update..");
+            mainWriter("Developing Software Update..");
             int updateSize = nt.developSoftwareUpdate();
-            sendSoftwareUpdate(nt, updateSize, networkSpeed, missionName);
+            String time = geTime();
+            sendSoftwareUpdate(nt, updateSize, networkSpeed, missionName,time);
         }
 
     }
@@ -100,50 +104,51 @@ public class MissionController extends  Thread { //wants to put asa timer task, 
     }
 
 
-            @Override
-            public void run () {
+    @Override
+    public void run () {
 
-                try
-                {
-                    writer = new BufferedWriter(new FileWriter("output.dat"));
-                }
-                catch (Exception e)
-                {
-                    System.out.println("Something went wrong");
-                }
-
-                // For the number of missions to be monitored, create a mission
-                for (Mission mission : listOfMissions) {
-
-                    Random random = new Random();
-                    timer.schedule(new MissionTimer(mission), random.nextInt(10000));
-
-                }
-
-                while (!noMoreMissions){
-
-                        waitForAllMissionsToEnd();
-                    }
-
-                try {
-                    writer.close();
-
-                }
-                catch (Exception e){
-
-                    System.out.println("something");
-                }
-
-
-
-
-
-
-
-
-
-
-            }
+        try
+        {
+            writer = new BufferedWriter(new FileWriter("output.dat"));
         }
+        catch (Exception e)
+        {
+            mainWriter("Something went wrong");
+        }
+
+        // For the number of missions to be monitored, create a mission
+        for (Mission mission : listOfMissions) {
+
+            Random random = new Random();
+            timer.schedule(new MissionTimer(mission, this), random.nextInt(10000));
+
+        }
+
+        while (!noMoreMissions){
+
+            waitForAllMissionsToEnd();
+        }
+
+        try {
+            writer.close();
+
+        }
+        catch (Exception e){
+
+            mainWriter("something");
+        }
+
+
+
+
+
+
+
+
+
+
+    }
+
+}
 
 
