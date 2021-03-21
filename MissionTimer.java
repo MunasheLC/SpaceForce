@@ -1,5 +1,3 @@
-package com.company;
-
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -10,12 +8,14 @@ public class MissionTimer extends TimerTask {
 
     Mission mission;
     String startTime;
+    MissionController controller;
 
-    MissionTimer (Mission mission){
+    MissionTimer (Mission mission, MissionController control){
 
 //        this.timer = timer;
 //        this.random = random;
         this.mission = mission;
+        this.controller = control;
 
 
 
@@ -26,7 +26,7 @@ public class MissionTimer extends TimerTask {
     public void run(){
         mission.getStartTime();
         mission.start();
-        System.out.println( mission.name + " Started at: " + mission.startTime);
+        controller.mainWriter( mission.name + " Started at: " + mission.startTime);
 
 
     }
