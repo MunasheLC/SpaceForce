@@ -25,16 +25,18 @@ public class Mission extends Thread{
     String status;
     String name;
     String destination;
+    MissionController controller;
 
 
     //Supplies allocated by mission controller based on destination planet
-    public Mission ( HashMap components, String name, String destination, double networkSpeed ) {
+    public Mission ( HashMap components, String name, String destination, double networkSpeed, MissionController controller ) {
         this.components = components;
         this.stage = "boost";
         this.name= name;
         this.destination = destination;
         this.status= "normal";
         this.networkSpeed = networkSpeed;
+        this.controller = controller;
 
 
 
@@ -58,23 +60,34 @@ public class Mission extends Thread{
         return random <= failureRate;
     }
 
-    public synchronized boolean errorCheck(){
+    public synchronized boolean errorCheck() {
         boolean failchecker = true; //currently failing
         Network net = new Network();
         Random rand = new Random();
-        int failureProbability = rand.nextInt(6-5) + 5;
-        if (failureProbability == 5){
-            int resolvable = rand.nextInt(6-5) + 5;
-            if (resolvable == 5){
+        int failureProbability = 5;
+//                rand.nextInt(6-5) + 5;
+        if (failureProbability == 5) {
+            int resolvable = 5;
+//            rand.nextInt(6-5) + 5;
+            if (resolvable == 5) {
                 //Send message for SoftwareUpdate
-                net.AddReportToControllerQ(name, networkSpeed, "SOFTWAREUPDATE", 5);
+                net.AddReportToControllerQ(name, networkSpeed, "SOFTWAREUPDATE", 5, controller);
+                if (net.avalbility){
+                    int US = net.updateSize;
+                    initializeSoftwareUpdate(US);
+                    failchecker = false;
+                   return failchecker;
+                }
             }
+
             //mission abort
             else {
-                net.AddReportToControllerQ(name, networkSpeed, "TERMINATE", 5);
+                net.AddReportToControllerQ(name, networkSpeed, "TERMINATE", 5, controller);
+                return failchecker;
             }
+            return true;
         }
-        return true;
+        return failchecker;
     }
     HashMap<Object,Integer> divs = new HashMap<Object,Integer>();
 
@@ -95,6 +108,33 @@ public class Mission extends Thread{
             divs.put(key2, initialCS);
         }
     }
+    public void sleep(int updateDevLength, int speed){
+        try {
+            Thread.sleep(updateDevLength * speed);
+        }
+        catch (InterruptedException e){
+
+            System.out.println("Update Development has been interrupted");
+
+        }
+    }
+    public void initializeSoftwareUpdate(int updateSize){
+        Network net = new Network();
+        if (networkSpeed == 2.0) {
+            sleep(updateSize, 200);
+            net.AddReportToControllerQ(name, networkSpeed, "UPDATESUCCESS", 5, controller);
+        }
+
+        if(networkSpeed == 0.2) {
+            sleep(updateSize, 400);
+            net.AddReportToControllerQ(name, networkSpeed, "UPDATESUCCESS", 5, controller);
+        }
+
+        if (networkSpeed == 0.02) {
+            sleep(updateSize, 600);
+            net.AddReportToControllerQ(name, networkSpeed, "UPDATESUCCESS", 5, controller);
+        }
+    }
 
     public void componentReport(){
         for (String Key1 : components.keySet()){
@@ -105,7 +145,7 @@ public class Mission extends Thread{
 
                     int initial = divs.get(key2);
                     String message = (key2 + " is @ " + innerMap.get(key2) + "/" + initial);
-                    net.AddComponentReportToControllerQ(name, networkSpeed, key2, message, 5);
+                    net.AddComponentReportToControllerQ(name, networkSpeed, key2, message, controller);
                     }
                 }
         }
@@ -261,7 +301,7 @@ public class Mission extends Thread{
 
     public void killMission(){
 
-        System.out.println( name + " failed");
+        System.out.println( name + " END ");
 
         missionInProgress = false;
 
