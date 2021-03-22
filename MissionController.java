@@ -57,7 +57,7 @@ public class MissionController extends  Thread { //wants to put asa timer task, 
             writer.append(s + "\n");
         } catch (Exception e) {
 
-            System.out.println("something");
+            System.out.println("");
 
         }
     }
@@ -135,7 +135,7 @@ public class MissionController extends  Thread { //wants to put asa timer task, 
         }
         catch (Exception e){
 
-            mainWriter("something");
+            mainWriter("");
         }
 
 
